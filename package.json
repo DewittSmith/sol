@@ -1,0 +1,7 @@
+{
+    "name": "sol",
+    "version": "0.1.0",
+    "description": "A lightweight package manager for ComputerCraft",
+    "main": "sol.lua",
+    "author": "Dewitt Smith"
+}
