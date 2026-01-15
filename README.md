@@ -1,4 +1,4 @@
-# ghpm
+# sol
 
 A Lua script for ComputerCraft that recursively downloads and installs Lua files from a GitHub repository onto your computer.
 
