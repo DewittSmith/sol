@@ -24,13 +24,8 @@ local function load_package(inputs)
     }
 
     local url = string.format(RAW_API, inputs.owner, inputs.name, inputs.ref or "main", "package.json")
-    print("Loading package metadata from " .. url .. "...")
 
-    local success, metadata = pcall(read, url)
-    if not success then return result end
-    metadata = textutils.unserialiseJSON(metadata)
-
-    local success, packageData = pcall(read, metadata.download_url)
+    local success, packageData = pcall(read, url)
     if not success then return result end
     packageData = textutils.unserialiseJSON(packageData)
 
@@ -47,6 +42,7 @@ local function list_files(package, inputs)
 
     local output = { }
     local function download(entry)
+        print(entry.path)
         if entry.type ~= "blob" then return end
         if not package.is_included(entry.path) then return end
         output[entry.path] = string.format(RAW_API, inputs.owner, inputs.name, inputs.ref or "main", entry.path)
