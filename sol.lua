@@ -1,3 +1,5 @@
+local shell = shell or require("shell")
+
 local REGISTRIES_PATH = "registries"
 local CONFIG_FILE = "sol.config"
 
@@ -6,7 +8,8 @@ local function filename_without_extension(path)
 end
 
 if not http.checkURL("https://www.google.com/") then
-    error("HTTP client not available. Please enable it in the ComputerCraft settings.")
+    printError("HTTP client not available. Please enable it in the ComputerCraft settings.")
+    return
 end
 
 local config = {
@@ -15,17 +18,20 @@ local config = {
 
 local function add_registry(url)
     if url == nil or url == "" then
-        error("No registry URL specified.")
+        printError("No registry URL specified.")
+        return
     end
 
     local content = http.get(url)
 
     if not content then 
-        error("Failed to download registry from " .. url) 
+        printError("Failed to download registry from " .. url) 
+        return
     end
 
     if content.getResponseCode() ~= 200 then
-        error("Failed to download registry from " .. url .. " (response code " .. content.getResponseCode() .. ")")
+        printError("Failed to download registry from " .. url .. " (response code " .. content.getResponseCode() .. ")")
+        return
     end
     
     local registryCode = content.readAll()
@@ -51,7 +57,8 @@ if fs.exists(CONFIG_FILE) then
     file.close()
 
     localConfig = textutils.unserialise(localConfig)
-    error("Local config loading not yet implemented.")
+    printError("Local config loading not yet implemented.")
+    return
 end
 
 for name, registry in pairs(config.registries) do
@@ -94,7 +101,7 @@ local function extract_args(target, formats)
     return nil
 end
 
-local function install_url(registry, inputs)
+local function install_package(registry, inputs)
     local package = {
         author = inputs.owner,
         package = inputs.name,
@@ -138,11 +145,13 @@ local function install_url(registry, inputs)
 
         local request = http.get(url)
         if not request then 
-            error("Failed to download file from " .. url) 
+            printError("Failed to download file from " .. url) 
+            return
         end
 
         if request.getResponseCode() ~= 200 then
-            error("Failed to download file from " .. url .. " (response code " .. request.getResponseCode() .. ")")
+            printError("Failed to download file from " .. url .. " (response code " .. request.getResponseCode() .. ")")
+            return
         end
 
         local content = request.readAll()
@@ -153,34 +162,48 @@ local function install_url(registry, inputs)
         file.write(content)
         file.close()
     end
+
+    if package.main then
+        print("Add " .. package.package .. " alias? (y/n, default: y)")
+        local answer = read()
+        if answer == "" or answer == "y" or answer == "Y" then
+            local aliasPath = fs.combine(pathPrefix, package.main)
+            shell.setAlias(package.package, aliasPath)
+            print("Added alias for " .. package.package)
+        end
+    end
 end
 
 local function install(package, registry)
     if package == nil or package == "" then
-        error("No package specified.")
+        printError("No package specified.")
+        return
     end
 
     if registry then
         if type(registry) == "string" then
             registry = config.registries[registry]
             if not registry then
-                error("Registry not found: " .. tostring(registry))
+                printError("Registry not found: " .. tostring(registry))
+                return
             end
         elseif type(registry) ~= "table" then
-            error("Invalid registry specified.")
+            printError("Invalid registry specified.")
+            return
         end
 
         local inputs = extract_args(package, registry.inputs)
         if inputs then
-            install_url(registry, inputs)
+            install_package(registry, inputs)
         else
-            error("No matching format found in registry: " .. registry.name)
+            printError("No matching format found in registry: " .. registry.name)
+            return
         end
     else
         for _, registry in pairs(config.registries) do
             local inputs = extract_args(package, registry.inputs)
             if inputs then
-                install_url(registry, inputs)
+                install_package(registry, inputs)
                 break
             end
         end
@@ -198,7 +221,8 @@ local function parseCommand(cmd)
             add_registry = add_registry
         }
     else
-        error("Unknown command: " .. tostring(cmd[1]))
+        printError("Unknown command: " .. tostring(cmd[1]))
+        return
     end
 end
 
