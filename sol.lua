@@ -95,9 +95,21 @@ local function extract_args(target, formats)
 end
 
 local function install_url(registry, inputs)
-    local package = registry.load_package(inputs)
+    local package = {
+        author = inputs.owner,
+        package = inputs.name,
+        version = "unknown",
+        include = { },
+        exclude = { },
+    }
+
+    local packageData = registry.load_file(inputs, "package.json")
+    packageData = packageData and textutils.unserialiseJSON(packageData) or {}
+
+    for k, v in pairs(packageData) do package[k] = v end
     if #package.include == 0 then table.insert(package.include, "%.lua$") end
     if package.main then table.insert(package.include, "^" .. package.main .. "$") end
+
     package.is_included = function(path)
         if path == nil or path == "" then return false end
         print("Checking inclusion for path: " .. path)
