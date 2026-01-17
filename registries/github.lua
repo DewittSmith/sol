@@ -20,7 +20,9 @@ local function load_package(inputs)
     local result = {
         author = inputs.owner,
         package = inputs.name,
-        version = "unknown"
+        version = "unknown",
+        include = { },
+        exclude = { },
     }
 
     local url = string.format(RAW_API, inputs.owner, inputs.name, inputs.ref or "main", "package.json")

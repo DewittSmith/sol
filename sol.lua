@@ -96,10 +96,8 @@ end
 
 local function install_url(registry, inputs)
     local package = registry.load_package(inputs)
-    if not package.include then package.include = { } end
     if #package.include == 0 then table.insert(package.include, "%.lua$") end
     if package.main then table.insert(package.include, "^" .. package.main .. "$") end
-    if not package.exclude then package.exclude = { } end
     package.is_included = function(path)
         if path == nil or path == "" then return false end
 
@@ -114,9 +112,7 @@ local function install_url(registry, inputs)
         return true
     end
 
-    print("Installing package " .. package.package .. " by " .. package.author .. " (version: " .. package.version .. ")")
-
-    local pathPrefix = fs.combine("packages", registry.name, package.package .. "@" .. package.author, package.version)
+    local pathPrefix = fs.combine("packages", package.package .. "+" .. package.author ..  "@" .. registry.name , package.version)
     print("Installing to " .. pathPrefix .. "...")
     for path, url in registry.list_files(package, inputs) do
         print("Downloading " .. path .. "...")
