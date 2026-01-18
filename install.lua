@@ -9,11 +9,18 @@ local function read_file(url)
     return content
 end
 
-print("Loading sol package manager...")
-local sol = read_file(SOL_URL)
-sol = assert(loadstring(sol))()
+local oldShell = _G.shell
+_G.shell = shell
 
-print("Loading github registry...")
-sol.add_registry(GH_REGISTRY_URL)
+pcall(function()
+    print("Loading sol package manager...")
+    local sol = read_file(SOL_URL)
+    sol = assert(loadstring(sol))()
 
-sol.install("https://github.com/DewittSmith/sol", registry)
+    print("Loading github registry...")
+    sol.add_registry(GH_REGISTRY_URL)
+
+    sol.install("https://github.com/DewittSmith/sol", registry)
+end)
+
+_G.shell = oldShell

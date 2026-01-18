@@ -106,6 +106,7 @@ local function install_package(registry, inputs)
         version = "unknown",
         include = { },
         exclude = { },
+        hooks = {}
     }
 
     local packageData = registry.load_file(inputs, "package.json")
@@ -153,7 +154,13 @@ local function install_package(registry, inputs)
     end
 
     print("Installing to " .. pathPrefix .. "...")
-    for path, url in registry.list_files(package, inputs) do
+    local function write_file(content, path)
+        local file = fs.open(path, "w")
+        file.write(content)
+        file.close()
+    end
+
+    local function download(url, path)
         print("Downloading " .. path .. "...")
 
         local request = http.get(url)
@@ -168,12 +175,24 @@ local function install_package(registry, inputs)
         end
 
         local content = request.readAll()
-        request.close()        
+        request.close()
+        write_file(content, fs.combine(pathPrefix, path))
+    end
 
-        local fullPath = fs.combine(pathPrefix, path)
-        local file = fs.open(fullPath, "w")
-        file.write(content)
-        file.close()
+    for path, url in registry.list_files(package, inputs) do download(url, path) end
+
+    if package.hooks.onload then
+        local hook = registry.load_file(inputs, package.hooks.onload)
+        write_file(hook, fs.combine(pathPrefix, package.hooks.onload))
+
+        print("Running onload hook...")
+
+        local startupPath = fs.combine("startup", packageName .. "_onload.lua")
+        local startup = fs.open(startupPath, "w")
+        startup.write("shell.run(\"" .. fs.combine(pathPrefix, package.hooks.onload) .. "\", \"" .. packageName .. "\", \"" .. pathPrefix .. "\")")
+        startup.close()
+
+        shell.run(startupPath)
     end
 
     print("Package " .. package.package .. " installed successfully.")
