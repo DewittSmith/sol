@@ -229,7 +229,7 @@ local function uninstall_package(pkg)
         fs.delete(pkg.path)
 
         for _, file in ipairs(fs.list(STARTUP_PATH)) do
-            if file:match("^" .. pkg.fullname) then
+            if file:match("^" .. pkg.fullname .. ".*") then
                 fs.delete(fs.combine_abs(STARTUP_PATH, file))
             end
         end
