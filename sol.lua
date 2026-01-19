@@ -10,6 +10,8 @@ local config = {
 }
 
 local function add_registry(url, ops)
+    ops = ops or {}
+
     if url == nil or url == "" then printError("No registry URL specified.") return end
     local FILE_PREFIX = "file://"
 
@@ -225,6 +227,8 @@ local function uninstall_package(pkg)
 end
 
 local function install(package, ops)
+    ops = ops or {}
+
     local success, registry, pkg = pcall(extract_pkg, package, ops.registry)
     if not success then printError(registry) return end
 
@@ -238,6 +242,8 @@ local function install(package, ops)
 end
 
 local function uninstall(package, ops)
+    ops = ops or {}
+
     local success, registry, pkg = pcall(extract_pkg, package, ops.registry)
     if not success then printError(registry) return end
 
