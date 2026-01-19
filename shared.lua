@@ -50,12 +50,16 @@ local function pushfn(fns)
 end
 
 function order.insert(modname, installPath)
-    if order[modname] then return end
-
-    table.insert(order, installPath)
-    order[modname] = #order
-    order[modname:match("^(.+)%+")] = #order
-    order[modname:match("^(.+)@")] = #order
+    if order[modname] then
+        local index = order[modname]
+        if order[index] == installPath then return end
+        order[index] = installPath
+    else
+        table.insert(order, installPath)
+        order[modname] = #order
+        order[modname:match("^(.+)%+")] = #order
+        order[modname:match("^(.+)@")] = #order
+    end
 
     -- Functions are not serializable, so we temporarily remove it
     local fns = popfn()
