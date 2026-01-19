@@ -22,7 +22,7 @@ local function load_file(inputs, path)
     return packageData
 end
 
-local function list_files(package, inputs)
+local function list_files(inputs, package)
     local url = string.format(BLOB_API, inputs.owner, inputs.name, inputs.ref or "main")
     local tree = textutils.unserialiseJSON(read(url)).tree
 
@@ -33,10 +33,7 @@ local function list_files(package, inputs)
         output[entry.path] = string.format(RAW_API, inputs.owner, inputs.name, inputs.ref or "main", entry.path)
     end
 
-    for _, entry in pairs(tree) do
-        download(entry)
-    end
-
+    for _, entry in pairs(tree) do download(entry) end
     return pairs(output)
 end
 
