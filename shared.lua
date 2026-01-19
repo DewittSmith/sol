@@ -10,7 +10,7 @@ function fs.combine_abs(...)
     return combined
 end
 
-local orderPath = fs.combine_abs(REGISTRIES_PATH, "load.order")
+local orderPath = fs.combine_abs(PACKAGES_PATH, "load.order")
 if not fs.exists(orderPath) then
     local orderFile = fs.open(orderPath, "w")
     orderFile.write(textutils.serialise({ }))
