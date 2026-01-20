@@ -1,4 +1,4 @@
-require("shared")
+local shared = require("shared")
 
 if not http.checkURL("https://www.google.com/") then
     printError("HTTP client not available. Please enable it in the ComputerCraft settings.")
@@ -218,7 +218,7 @@ local function install_package(registry, pkg, noprompt)
         shell.run(startupPath)
     end
 
-    sol.loadorder.insert(pkg.fullname, pkg.fullpath)
+    shared.loadorder.insert(pkg.fullname, pkg.fullpath)
     print("Package " .. pkg.package .. " installed successfully.")
 end
 
@@ -234,7 +234,7 @@ local function uninstall_package(pkg)
             end
         end
 
-        sol.loadorder.remove(pkg.fullname)
+        shared.loadorder.remove(pkg.fullname)
     end
 
     print("Package " .. pkg.fullname .. " uninstalled successfully.")
@@ -327,7 +327,8 @@ if #args == 0 or args[1] == "sol" then
     return {
         install = install,
         uninstall = uninstall,
-        add_registry = add_registry
+        add_registry = add_registry,
+        require = shared.require,
     }
 else
     return parseCommand(args)

@@ -90,73 +90,74 @@ function order.remove(modname)
     pushfn(fns)
 end
 
-_G.sol = _G.sol or {}
-_G.sol.loadorder = order
-_G.sol.require = function(modname)
-    if not modname or modname == "" then error("No modname provided") end
-    if cachedPackages[modname] then return cachedPackages[modname] end
+return {
+    loadorder = order,
+    require = function(modname)
+        if not modname or modname == "" then error("No modname provided") end
+        if cachedPackages[modname] then return cachedPackages[modname] end
 
-    local ip = _G.sol.loadorder[modname]
-    if not ip then error("Module '" .. modname .. "' not found") end
-    ip = _G.sol.loadorder[ip]
+        local ip = order[modname]
+        if not ip then error("Module '" .. modname .. "' not found") end
+        ip = order[ip]
 
-    local mod = {}
-    cachedPackages[modname] = mod
+        local mod = {}
+        cachedPackages[modname] = mod
 
-    local oldPath = package.path
-    package.path = oldPath .. ";" .. fs.combine_abs(ip, "?.lua")
+        local oldPath = package.path
+        package.path = oldPath .. ";" .. fs.combine_abs(ip, "?.lua")
 
-    local success, err = pcall(function()
-        local function loadFile(folder, prefix, p)
-            if fs.isDir(p) then
-                local dirName = fs.getName(p)
-                local newPrefix = prefix and (prefix .. "." .. dirName) or dirName
-                folder[dirName] = folder[dirName] or {}
-                for _, subpath in ipairs(fs.list(p)) do
-                    loadFile(folder[dirName], newPrefix, fs.combine_abs(p, subpath))
-                end
-            elseif p:match("%.lua$") then
-                local filename = p:trimext()
-                local requirePath = prefix and (prefix .. "." .. filename) or filename
+        local success, err = pcall(function()
+            local function loadFile(folder, prefix, p)
+                if fs.isDir(p) then
+                    local dirName = fs.getName(p)
+                    local newPrefix = prefix and (prefix .. "." .. dirName) or dirName
+                    folder[dirName] = folder[dirName] or {}
+                    for _, subpath in ipairs(fs.list(p)) do
+                        loadFile(folder[dirName], newPrefix, fs.combine_abs(p, subpath))
+                    end
+                elseif p:match("%.lua$") then
+                    local filename = p:trimext()
+                    local requirePath = prefix and (prefix .. "." .. filename) or filename
 
-                local mod = require(requirePath)
-                if type(mod) == "table" then
-                    if filename == modname or filename == "init" then
-                        for k, v in pairs(mod) do
-                            folder[k] = v
+                    local mod = require(requirePath)
+                    if type(mod) == "table" then
+                        if filename == modname or filename == "init" then
+                            for k, v in pairs(mod) do
+                                folder[k] = v
+                            end
+                        else
+                            folder[filename] = mod
                         end
-                    else
-                        folder[filename] = mod
                     end
                 end
             end
-        end
 
-        local function cleanup(tbl)
-            for k, v in pairs(tbl) do
-                if type(v) == "table" then
-                    cleanup(v)
-                    if next(v) == nil then
+            local function cleanup(tbl)
+                for k, v in pairs(tbl) do
+                    if type(v) == "table" then
+                        cleanup(v)
+                        if next(v) == nil then
+                            tbl[k] = nil
+                        end
+                    elseif v == true then
                         tbl[k] = nil
                     end
-                elseif v == true then
-                    tbl[k] = nil
                 end
             end
+
+            for _, p in ipairs(fs.list(ip)) do
+                loadFile(mod, nil, fs.combine_abs(ip, p))
+            end
+
+            cleanup(mod)
+        end)
+
+        if not success then
+            cachedPackages[modname] = nil
+            printError(err)
         end
 
-        for _, p in ipairs(fs.list(ip)) do
-            loadFile(mod, nil, fs.combine_abs(ip, p))
-        end
-
-        cleanup(mod)
-    end)
-
-    if not success then
-        cachedPackages[modname] = nil
-        printError(err)
+        package.path = oldPath
+        return mod
     end
-
-    package.path = oldPath
-    return mod
-end
+}
