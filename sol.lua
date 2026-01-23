@@ -63,6 +63,7 @@ do
 
         -- Functions are not serializable, so we temporarily remove it
         local fns = popfn()
+        print(textutils.serialise(order))
 
         local orderFile = fs.open(orderPath, "w")
         orderFile.write(textutils.serialise(order))
