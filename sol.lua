@@ -2,6 +2,8 @@ local STARTUP_PATH = "/startup"
 local PACKAGES_PATH = "/packages"
 local REGISTRIES_PATH = "registries"
 
+local function error_handler(err) return debug.traceback(err) end
+
 local api = {}
 do
     function fs.combine_abs(...)
@@ -105,7 +107,7 @@ do
         local oldPath = package.path
         package.path = (oldPath and (oldPath .. ";") or "") .. fs.combine_abs(ip, "?.lua")
 
-        local success, err = pcall(function()
+        local success, err = xpcall(function()
             local function loadFile(folder, prefix, p)
                 if fs.isDir(p) then
                     local dirName = fs.getName(p)
@@ -149,7 +151,7 @@ do
             end
 
             cleanup(mod)
-        end)
+        end, error_handler)
 
         if not success then
             cachedPackages[modname] = nil
@@ -409,14 +411,14 @@ end
 function install(package, ops)
     ops = ops or {}
 
-    local success, registry, pkg = pcall(extract_pkg, package, ops.registry)
+    local success, registry, pkg = xpcall(extract_pkg, error_handler, package, ops.registry)
     if not success then printError(registry) return end
 
-    local success, err = pcall(install_package, registry, pkg, ops.noprompt)
+    local success, err = xpcall(install_package, error_handler, registry, pkg, ops.noprompt)
     if not success then
         printError(err)
 
-        local success, err = pcall(uninstall_package, pkg)
+        local success, err = xpcall(uninstall_package, error_handler, pkg)
         if not success then printError("Failed to clean up after failed installation: " .. err) end
     end
 end
@@ -424,10 +426,10 @@ end
 function uninstall(package, ops)
     ops = ops or {}
 
-    local success, registry, pkg = pcall(extract_pkg, package, ops.registry)
+    local success, registry, pkg = xpcall(extract_pkg, error_handler, package, ops.registry)
     if not success then printError(registry) return end
 
-    local success, err = pcall(uninstall_package, pkg)
+    local success, err = xpcall(uninstall_package, error_handler, pkg)
     if not success then printError(err) end
 end
 
